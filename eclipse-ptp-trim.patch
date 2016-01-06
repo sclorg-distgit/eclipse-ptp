@@ -1,0 +1,87 @@
+diff -up ./releng/org.eclipse.ptp.core-feature/feature.xml.fix ./releng/org.eclipse.ptp.core-feature/feature.xml
+diff -up ./releng/org.eclipse.ptp-feature/feature.xml.fix ./releng/org.eclipse.ptp-feature/feature.xml
+--- ./releng/org.eclipse.ptp-feature/feature.xml.fix	2015-06-09 19:31:59.000000000 -0400
++++ ./releng/org.eclipse.ptp-feature/feature.xml	2015-07-02 16:53:39.190494653 -0400
+@@ -28,26 +28,6 @@
+          version="0.0.0"/>
+ 
+    <includes
+-         id="org.eclipse.ptp.etfw"
+-         version="0.0.0"/>
+-
+-   <includes
+-         id="org.eclipse.ptp.pldt"
+-         version="0.0.0"/>
+-
+-   <includes
+-         id="org.eclipse.ptp.rm.ibm.ll"
+-         version="0.0.0"/>
+-
+-   <includes
+-         id="org.eclipse.ptp.rm.ibm.pe"
+-         version="0.0.0"/>
+-
+-   <includes
+-         id="org.eclipse.ptp.rm.slurm"
+-         version="0.0.0"/>
+-
+-   <includes
+          id="org.eclipse.ptp.rdt.sync"
+          version="0.0.0"/>
+ 
+@@ -56,10 +36,6 @@
+          version="0.0.0"/>
+ 
+    <includes
+-         id="org.eclipse.ptp.rm.ibm.platform.lsf"
+-         version="0.0.0"/>
+-
+-   <includes
+          id="org.eclipse.ptp.rdt.sync.cdt"
+          version="0.0.0"/>
+ 
+diff -up ./releng/org.eclipse.ptp.repo/category.xml.fix ./releng/org.eclipse.ptp.repo/category.xml
+--- ./releng/org.eclipse.ptp.repo/category.xml.fix	2015-07-02 16:59:57.300839328 -0400
++++ ./releng/org.eclipse.ptp.repo/category.xml	2015-07-02 17:59:52.363164303 -0400
+@@ -6,15 +6,18 @@
+    <feature url="features/org.eclipse.ptp_0.0.0.jar" id="org.eclipse.ptp" version="0.0.0">
+       <category name="Parallel Tools Platform"/>
+    </feature>
++<!--
+    <feature url="features/org.eclipse.ptp.fortran_0.0.0.jar" id="org.eclipse.ptp.fortran" version="0.0.0">
+       <category name="Parallel Tools Platform"/>
+    </feature>
++-->
+    <feature url="features/org.eclipse.ptp.debug.sdm_0.0.0.jar" id="org.eclipse.ptp.debug.sdm" version="0.0.0">
+       <category name="Parallel Tools Platform"/>
+    </feature>
+    <feature url="features/org.eclipse.ptp.rm.jaxb.contrib_0.0.0.jar" id="org.eclipse.ptp.rm.jaxb.contrib" version="0.0.0">
+       <category name="Parallel Tools Platform"/>
+    </feature>
++<!--
+    <feature url="features/org.eclipse.ptp.gem_0.0.0.jar" id="org.eclipse.ptp.gem" version="0.0.0">
+       <category name="Parallel Tools Platform"/>
+    </feature>
+@@ -33,12 +36,14 @@
+    <feature url="features/org.eclipse.ptp.etfw.feedback.perfsuite_0.0.0.jar" id="org.eclipse.ptp.etfw.feedback.perfsuite" version="0.0.0">
+       <category name="Parallel Tools Platform"/>
+    </feature>
++-->
+    <feature url="features/org.eclipse.ptp.sci_0.0.0.jar" id="org.eclipse.ptp.sci" version="0.0.0">
+       <category name="Parallel Tools Platform"/>
+    </feature>
+    <feature url="features/org.eclipse.ptp.sdk_0.0.0.jar" id="org.eclipse.ptp.sdk" version="0.0.0">
+       <category name="Parallel Tools Platform"/>
+    </feature>
++<!--
+    <feature url="features/org.eclipse.ptp.rdt.sync.fortran_0.0.0.jar" id="org.eclipse.ptp.rdt.sync.fortran" version="0.0.0">
+       <category name="Remote Development Tools"/>
+    </feature>
+@@ -51,6 +56,7 @@
+    <feature url="features/org.eclipse.photran.xlf_0.0.0.jar" id="org.eclipse.photran.xlf" version="0.0.0">
+       <category name="Fortran Development Tools (Photran)"/>
+    </feature>
++-->
+ 
+    <category-def name="Parallel Tools Platform" label="Parallel Tools Platform"/>
+    <category-def name="Fortran Development Tools (Photran)" label="Fortran Development Tools (Photran)"/>
