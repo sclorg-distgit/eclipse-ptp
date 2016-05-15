@@ -2,11 +2,13 @@
 %{!?scl:%global pkg_name %{name}}
 %{?java_common_find_provides_and_requires}
 
+%global baserelease 2
+
 %global eclipse_base            %{_datadir}/eclipse
 %global cdtreq                  1:8.1.0
 %global pdereq                  1:4.2.0
-%global ptp_build_id            201506251100
-%global ptp_git_tag             PTP_9_0_0
+%global ptp_qualifier           201509091505
+%global ptp_git_tag             PTP_9_0_1
 
 %ifarch %{ix86}
     %define eclipse_arch x86
@@ -23,14 +25,14 @@
 
 Summary:        Eclipse Parallel Tools Platform
 Name:           %{?scl_prefix}eclipse-ptp
-Version:        9.0.0
-Release:        1.3.bs2%{?dist}
+Version:        9.0.1
+Release:        1.%{baserelease}%{?dist}
 License:        EPL
 Group:          Development/Tools
 URL:            http://www.eclipse.org/ptp
 
 # The following tarballs were downloaded from the git repositories
-Source0:        http://git.eclipse.org/c/ptp/org.eclipse.ptp.git/snapshot/%{ptp_git_tag}.tar.xz
+Source0:        http://git.eclipse.org/c/ptp/org.eclipse.ptp.git/snapshot/org.eclipse.ptp-%{ptp_git_tag}.tar.xz
 # To help generate the needed Requires
 Source3:        finddeps.sh
 
@@ -38,10 +40,9 @@ Source3:        finddeps.sh
 Patch0:         eclipse-ptp-tycho-build.patch
 # Add <repository> for tycho-eclipserun-plugin
 Patch1:         eclipse-ptp-repository.patch
-Patch2:		eclipse-ptp-trim.patch
+Patch2:         eclipse-ptp-trim.patch
 
 # Remove some unneeded dependencies
-BuildRequires:  java-devel >= 1.5.0
 BuildRequires:  %{?scl_prefix_java_common}maven-local
 # Need tycho-extras for core/org.eclipse.ptp.doc.isv
 BuildRequires:  %{?scl_prefix}tycho-extras
@@ -72,7 +73,6 @@ Obsoletes:      %{name}-rdt < %{version}-%{release}
 Obsoletes:      %{name}-rdt-xlc < %{version}-%{release}
 Obsoletes:      %{name}-remote-rse < %{version}-%{release}
 
-
 %description
 The aim of the parallel tools platform project is to produce an open-source
 industry-strength platform that provides a highly integrated environment
@@ -88,7 +88,6 @@ provide:
 
 This package contains the main PTP run-time features.
 
-
 %package        master
 Summary:        Complete PTP package
 Group:          Development/Libraries
@@ -103,7 +102,6 @@ Requires:       %{name}-sdm = %{version}-%{release}
 
 %description    master
 The package will bring in all of the PTP components.
-
 
 %package        core-source
 Summary:        PTP Core Components Source
@@ -123,7 +121,6 @@ Requires:       %{name} = %{version}-%{release}
 %description    rm-contrib
 Adds resource managers for a number of different systems.
 
-
 %package        sci
 Summary:        PTP Scalable Communication Infrastructure (SCI)
 Group:          Development/Libraries
@@ -132,7 +129,6 @@ BuildArch:      noarch
 %description    sci
 Parallel Tools Platform components that implements the Scalable Communication
 Infrastructure (SCI).
-
 
 %package        sdk
 Summary:        Parallel Tools Platform SDK 
@@ -143,7 +139,6 @@ Requires:       %{name}-core-source = %{version}-%{release}
 %description    sdk
 Eclipse Parallel Tools Platform. Software development kit including source
 code and developer documentation.
-
 
 %package        sdm
 Summary:        PTP Scalable Debug Manager (SDM)
@@ -158,10 +153,10 @@ NOTE: The sdm binary for the architecture of the host machine is available
 in the sdm plugin and at %{_libdir}/ptp/sdm.  If the target system is of
 a different archicture, you will need to build and install it by hand.
 
-
 %prep
 %{?scl:scl enable %{scl_maven} %{scl} - << "EOF"}
-%setup -q -n %{ptp_git_tag}
+set -e -x
+%setup -q -n org.eclipse.ptp-%{ptp_git_tag}
 
 %patch0 -p2 -b .tycho-build
 %patch1 -p1 -b .repository
@@ -227,12 +222,12 @@ sed -i -e 's/<arch>x86<\/arch>/<arch>%{eclipse_arch}<\/arch>/g' pom.xml
 
 # Remove bundled binaries
 rm -r releng/org.eclipse.ptp.linux/os/linux
-
 %{?scl:EOF}
 
-%build
 
+%build
 %{?scl:scl enable %{scl_maven} %{scl} - << "EOF"}
+set -e -x
 export JAVA_HOME=%{java_home}
 export PATH=/usr/bin:$PATH
 export MAVEN_OPTS="-XX:CompileCommand=exclude,org/eclipse/tycho/core/osgitools/EquinoxResolver,newState ${MAVEN_OPTS}"
@@ -245,14 +240,13 @@ mkdir -p releng/org.eclipse.ptp.linux/os/linux/%{_arch}
 cp -p debug/org.eclipse.ptp.debug.sdm/bin/sdm releng/org.eclipse.ptp.linux/os/linux/%{_arch}/sdm
 
 # Build the project
-%mvn_build -j -- -DforceContextQualifier=%{ptp_build_id}
-
-
+%mvn_build -j -- -DforceContextQualifier=%{ptp_qualifier}
 %{?scl:EOF}
 
-%install
 
+%install
 %{?scl:scl enable %{scl_maven} %{scl} - << "EOF"}
+set -e -x
 mkdir -p %{buildroot}%{eclipse_base}/dropins/ptp/eclipse/{features,plugins}
 
 # ptp
@@ -294,8 +288,8 @@ sed -i -e '\,plugins/org.eclipse.ptp.remote.remotetools_,d' \
 # Install sdm binary so debuginfo is created
 mkdir -p %{buildroot}%{_libdir}/ptp
 cp -p debug/org.eclipse.ptp.debug.sdm/bin/sdm %{buildroot}%{_libdir}/ptp/
-
 %{?scl:EOF}
+
 
 %files -f files.org.eclipse.ptp_%{version}
 %doc releng/org.eclipse.ptp-feature/epl-v10.html
@@ -328,8 +322,19 @@ cp -p debug/org.eclipse.ptp.debug.sdm/bin/sdm %{buildroot}%{_libdir}/ptp/
 %{eclipse_base}/dropins/ptp/eclipse/features/org.eclipse.ptp.debug.sdm_*
 %{_libdir}/ptp/
 
-
 %changelog
+* Mon Feb 29 2016 Mat Booth <mat.booth@redhat.com> - 9.0.1-1.2
+- Rebuild 2016-02-29
+
+* Mon Feb 29 2016 Mat Booth <mat.booth@redhat.com> - 9.0.1-1.1
+- Import latest from Fedora
+
+* Thu Feb 04 2016 Sopot Cela <scela@redhat.com> - 9.0.1-1
+- Upgrade to upstrea 9.0.1
+
+* Wed Feb 03 2016 Fedora Release Engineering <releng@fedoraproject.org> - 9.0.0-2
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_24_Mass_Rebuild
+
 * Mon Jul 20 2015 Mat Booth <mat.booth@redhat.com> - 9.0.0-1.3
 - Disable optimisation that generates no-strict-overflow warning instead of
   simply disabling the warning
