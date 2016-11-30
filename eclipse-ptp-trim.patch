@@ -1,0 +1,42 @@
+diff -up ./releng/org.eclipse.ptp.core-feature/feature.xml.fix ./releng/org.eclipse.ptp.core-feature/feature.xml
+diff -up ./releng/org.eclipse.ptp-feature/feature.xml.fix ./releng/org.eclipse.ptp-feature/feature.xml
+--- ./releng/org.eclipse.ptp-feature/feature.xml.fix	2015-06-09 19:31:59.000000000 -0400
++++ ./releng/org.eclipse.ptp-feature/feature.xml	2015-07-02 16:53:39.190494653 -0400
+@@ -28,26 +28,6 @@
+          version="0.0.0"/>
+ 
+    <includes
+-         id="org.eclipse.ptp.etfw"
+-         version="0.0.0"/>
+-
+-   <includes
+-         id="org.eclipse.ptp.pldt"
+-         version="0.0.0"/>
+-
+-   <includes
+-         id="org.eclipse.ptp.rm.ibm.ll"
+-         version="0.0.0"/>
+-
+-   <includes
+-         id="org.eclipse.ptp.rm.ibm.pe"
+-         version="0.0.0"/>
+-
+-   <includes
+-         id="org.eclipse.ptp.rm.slurm"
+-         version="0.0.0"/>
+-
+-   <includes
+          id="org.eclipse.ptp.rdt.sync"
+          version="0.0.0"/>
+ 
+@@ -56,10 +36,6 @@
+          version="0.0.0"/>
+ 
+    <includes
+-         id="org.eclipse.ptp.rm.ibm.platform.lsf"
+-         version="0.0.0"/>
+-
+-   <includes
+          id="org.eclipse.ptp.rdt.sync.cdt"
+          version="0.0.0"/>
+ 
