@@ -2,7 +2,7 @@
 %{!?scl:%global pkg_name %{name}}
 %{?java_common_find_provides_and_requires}
 
-%global baserelease 2
+%global baserelease 3
 
 %global eclipse_base            %{_datadir}/eclipse
 %global cdtreq                  1:9.0.0
@@ -254,11 +254,13 @@ export PATH=/usr/bin:$PATH
 export MAVEN_OPTS="-Xmx1024m -XX:CompileCommand=exclude,org/eclipse/tycho/core/osgitools/EquinoxResolver,newState ${MAVEN_OPTS}"
 # Build the sdm binary
 pushd debug/org.eclipse.ptp.debug.sdm
-export CFLAGS="%{optflags}"
+export CFLAGS="%{optflags} -fno-strict-overflow"
 sh BUILD
+make clean
 popd
 mkdir -p releng/org.eclipse.ptp.linux/os/linux/%{_arch}
 cp -p debug/org.eclipse.ptp.debug.sdm/bin/sdm releng/org.eclipse.ptp.linux/os/linux/%{_arch}/sdm
+echo -e "Eclipse-BundleShape: dir\n\n" >> releng/org.eclipse.ptp.linux/META-INF/MANIFEST.MF
 
 # Build the project
 %mvn_build -j -- -DforceContextQualifier=%{ptp_qualifier}
@@ -304,8 +306,14 @@ sed -i -e '\,plugins/org.eclipse.ptp.remote.remotetools_,d' \
        -e '\,plugins/org.eclipse.ptp.remotetools_,d' files.*
 
 # Install sdm binary so debuginfo is created
+pushd %{buildroot}%{eclipse_base}/dropins/ptp/eclipse/plugins/
+sdm=$(ls org.eclipse.ptp.linux_*)
+unzip -d ${sdm%.jar} $sdm
+popd
+sed -i -e '/plugins\/org\.eclipse\.ptp\.linux_/s/\.jar//' files.*
 mkdir -p %{buildroot}%{_libdir}/ptp
-cp -p debug/org.eclipse.ptp.debug.sdm/bin/sdm %{buildroot}%{_libdir}/ptp/
+ln -s %{eclipse_base}/dropins/ptp/eclipse/plugins/${sdm%.jar}/os/linux/%{eclipse_arch}/sdm \
+  %{buildroot}%{_libdir}/ptp/
 %{?scl:EOF}
 
 
@@ -341,6 +349,11 @@ cp -p debug/org.eclipse.ptp.debug.sdm/bin/sdm %{buildroot}%{_libdir}/ptp/
 %{_libdir}/ptp/
 
 %changelog
+* Mon Aug 01 2016 Mat Booth <mat.booth@redhat.com> - 9.1.0-1.3
+- Don't package intermediate artifacts, fix binary stripping problems
+- Disable compiler optimisation that make assumptions about signed integer
+  overflows
+
 * Fri Jul 29 2016 Mat Booth <mat.booth@redhat.com> - 9.1.0-1.2
 - Disable all Fortran support bits
 
