@@ -2,7 +2,7 @@
 %{!?scl:%global pkg_name %{name}}
 %{?java_common_find_provides_and_requires}
 
-%global baserelease 3
+%global baserelease 4
 
 %global eclipse_base            %{_datadir}/eclipse
 %global cdtreq                  1:9.0.0
@@ -130,6 +130,7 @@ Adds resource managers for a number of different systems.
 Summary:        PTP Scalable Communication Infrastructure (SCI)
 Group:          Development/Libraries
 BuildArch:      noarch
+Requires:       %{name} = %{version}-%{release}
 
 %description    sci
 Parallel Tools Platform components that implements the Scalable Communication
@@ -309,6 +310,7 @@ sed -i -e '\,plugins/org.eclipse.ptp.remote.remotetools_,d' \
 pushd %{buildroot}%{eclipse_base}/dropins/ptp/eclipse/plugins/
 sdm=$(ls org.eclipse.ptp.linux_*)
 unzip -d ${sdm%.jar} $sdm
+rm $sdm
 popd
 sed -i -e '/plugins\/org\.eclipse\.ptp\.linux_/s/\.jar//' files.*
 mkdir -p %{buildroot}%{_libdir}/ptp
@@ -349,6 +351,9 @@ ln -s %{eclipse_base}/dropins/ptp/eclipse/plugins/${sdm%.jar}/os/linux/%{eclipse
 %{_libdir}/ptp/
 
 %changelog
+* Mon Aug 01 2016 Mat Booth <mat.booth@redhat.com> - 9.1.0-1.4
+- Remove exploded jar
+
 * Mon Aug 01 2016 Mat Booth <mat.booth@redhat.com> - 9.1.0-1.3
 - Don't package intermediate artifacts, fix binary stripping problems
 - Disable compiler optimisation that make assumptions about signed integer
