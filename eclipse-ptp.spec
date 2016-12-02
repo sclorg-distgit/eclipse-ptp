@@ -2,11 +2,8 @@
 %{!?scl:%global pkg_name %{name}}
 %{?java_common_find_provides_and_requires}
 
-%global baserelease 4
+%global baserelease 2
 
-%global eclipse_base            %{_datadir}/eclipse
-%global cdtreq                  1:9.0.0
-%global pdereq                  1:4.2.0
 %global ptp_qualifier           201606021530
 %global ptp_git_tag             PTP_9_1_0
 
@@ -26,33 +23,25 @@
 Summary:        Eclipse Parallel Tools Platform
 Name:           %{?scl_prefix}eclipse-ptp
 Version:        9.1.0
-Release:        1.%{baserelease}%{?dist}
+Release:        3.%{baserelease}%{?dist}
 License:        EPL
-Group:          Development/Tools
 URL:            http://www.eclipse.org/ptp
 
 # The following tarballs were downloaded from the git repositories
 Source0:        http://git.eclipse.org/c/ptp/org.eclipse.ptp.git/snapshot/org.eclipse.ptp-%{ptp_git_tag}.tar.xz
-# To help generate the needed Requires
-Source3:        finddeps.sh
-Patch0:         eclipse-ptp-trim.patch
 
-# Remove some unneeded dependencies
-BuildRequires:  %{?scl_prefix_maven}maven-local
+BuildRequires:  %{?scl_prefix}tycho
+BuildRequires:  %{?scl_prefix}tycho-extras
 BuildRequires:  %{?scl_prefix_maven}maven-antrun-plugin
 BuildRequires:  %{?scl_prefix_maven}maven-plugin-build-helper
-# Need tycho-extras for core/org.eclipse.ptp.doc.isv
-BuildRequires:  %{?scl_prefix}tycho-extras
-BuildRequires:  %{?scl_prefix}eclipse-cdt-parsers >= %{cdtreq}
+BuildRequires:  %{?scl_prefix}eclipse-cdt-parsers
 BuildRequires:  %{?scl_prefix}eclipse-license
 BuildRequires:  %{?scl_prefix}eclipse-jgit
-BuildRequires:  %{?scl_prefix}eclipse-pde >= %{pdereq}
+BuildRequires:  %{?scl_prefix}eclipse-pde
 BuildRequires:  %{?scl_prefix}eclipse-remote
 BuildRequires:  %{?scl_prefix}eclipse-tm-terminal
 BuildRequires:  %{?scl_prefix}lpg-java-compat = 1.1.0
 
-Requires:       %{?scl_prefix}eclipse-cdt >= %{cdtreq}
-Requires:       %{?scl_prefix}eclipse-remote
 # Pulled in by rdt.remotetools being in ptp main
 Provides:       %{name}-cdt-compilers = %{version}-%{release}
 Obsoletes:      %{name}-cdt-compilers < %{version}-%{release}
@@ -95,42 +84,49 @@ This package contains the main PTP run-time features.
 
 %package        master
 Summary:        Complete PTP package
-Group:          Development/Libraries
-Requires:       %{?scl_prefix}eclipse-cdt >= %{cdtreq}
-Requires:       %{name} = %{version}-%{release}
-
 #master package is a virtual package that requires all of the components
+Requires:       %{name} = %{version}-%{release}
+Requires:       %{name}-gem = %{version}-%{release}
 Requires:       %{name}-rm-contrib = %{version}-%{release}
 Requires:       %{name}-sci = %{version}-%{release}
-Requires:       %{name}-sdk = %{version}-%{release}
 Requires:       %{name}-sdm = %{version}-%{release}
 
 %description    master
 The package will bring in all of the PTP components.
 
-%package        core-source
-Summary:        PTP Core Components Source
-Group:          Development/Libraries
+%package        gem
+Summary:        PTP Graphical Explorer of MPI Programs (GEM)
 BuildArch:      noarch
-Requires:       %{name} = %{version}-%{release}
 
-%description    core-source
-Parallel Tools Platform core components source code.
+%description    gem
+GEM serves as a graphical front end for In-situ Partial Order (ISP), a
+dynamic formal verification tool for MPI developed at the School of
+Computing, University of Utah.
+
+Whether you are new to MPI or are an advanced user, GEM will help you debug
+your MPI programs, and graphically show many valuable facts, including all
+the possible send/receive matches, and synchronizations. GEM also includes
+features to help users understand and debug the program across all platforms
+on which it may be run (e.g. highlighting deadlocks that may occur due to
+differing communication buffer allocations). For a given test harness, GEM
+will allow you to explore only the relevant process interleavings, which are
+much smaller than the number of total feasible interleavings. GEM also
+guarantees to discover and explore all non-deterministic matches at run-time. 
 
 %package        rm-contrib
 Summary:        PTP Contributed Resource Manager Definitions
-Group:          Development/Libraries
 BuildArch:      noarch
-Requires:       %{name} = %{version}-%{release}
 
 %description    rm-contrib
 Adds resource managers for a number of different systems.
 
 %package        sci
 Summary:        PTP Scalable Communication Infrastructure (SCI)
-Group:          Development/Libraries
 BuildArch:      noarch
-Requires:       %{name} = %{version}-%{release}
+# This package has no automatic requires because it genuinely doesn't
+# require anything, so need to add a dep on the filesystem for correct
+# directory ownership
+Requires:       %{?scl_prefix}eclipse-filesystem
 
 %description    sci
 Parallel Tools Platform components that implements the Scalable Communication
@@ -138,9 +134,11 @@ Infrastructure (SCI).
 
 %package        sdk
 Summary:        Parallel Tools Platform SDK 
-Group:          Development/Libraries
 BuildArch:      noarch
-Requires:       %{name}-core-source = %{version}-%{release}
+Requires:       %{name}-master = %{version}-%{release}
+# Obsoletes/Provides added in F25
+Provides:       %{name}-core-source = %{version}-%{release}
+Obsoletes:      %{name}-core-source < %{version}-%{release}
 
 %description    sdk
 Eclipse Parallel Tools Platform. Software development kit including source
@@ -148,8 +146,6 @@ code and developer documentation.
 
 %package        sdm
 Summary:        PTP Scalable Debug Manager (SDM)
-Group:          Development/Libraries
-Requires:       %{name} = %{version}-%{release}
 
 %description    sdm
 Parallel Tools Platform components that implement a parallel debug server
@@ -164,8 +160,6 @@ a different archicture, you will need to build and install it by hand.
 set -e -x
 %setup -q -n org.eclipse.ptp-%{ptp_git_tag}
 
-%patch0 -p0
-
 # Fix target platform environments
 TYCHO_ENV="<environment><os>linux</os><ws>gtk</ws><arch>%{eclipse_arch}</arch></environment>"
 %pom_xpath_set "pom:configuration/pom:environments" "$TYCHO_ENV"
@@ -173,13 +167,9 @@ TYCHO_ENV="<environment><os>linux</os><ws>gtk</ws><arch>%{eclipse_arch}</arch></
 
 # Disable Fortran support bits
 %pom_disable_module rdt/org.eclipse.ptp.rdt.sync.fortran.ui
-%pom_disable_module releng/org.eclipse.ptp.etfw-feature
 %pom_disable_module releng/org.eclipse.ptp.etfw.tau-feature
 %pom_disable_module releng/org.eclipse.ptp.etfw.tau.fortran-feature
-%pom_disable_module releng/org.eclipse.ptp.etfw.feedback.perfsuite-feature
 %pom_disable_module releng/org.eclipse.ptp.fortran-feature
-%pom_disable_module releng/org.eclipse.ptp.gem-feature
-%pom_disable_module releng/org.eclipse.ptp.pldt-feature
 %pom_disable_module releng/org.eclipse.ptp.pldt.fortran-feature
 %pom_disable_module releng/org.eclipse.ptp.pldt.upc-feature
 %pom_disable_module releng/org.eclipse.ptp.rdt.sync.fortran-feature
@@ -194,73 +184,65 @@ TYCHO_ENV="<environment><os>linux</os><ws>gtk</ws><arch>%{eclipse_arch}</arch></
 %pom_disable_module rms/org.eclipse.ptp.rm.ibm.platform.lsf.doc.user
 %pom_disable_module rms/org.eclipse.ptp.rm.ibm.platform.lsf.ui
 %pom_disable_module rms/org.eclipse.ptp.rm.slurm.help
-%pom_disable_module tools/etfw/org.eclipse.ptp.etfw
-%pom_disable_module tools/etfw/org.eclipse.ptp.etfw.doc.user
-%pom_disable_module tools/etfw/org.eclipse.ptp.etfw.feedback
-%pom_disable_module tools/etfw/org.eclipse.ptp.etfw.feedback.perfsuite
-%pom_disable_module tools/etfw/org.eclipse.ptp.etfw.feedback.perfsuite.doc.user
-%pom_disable_module tools/etfw/org.eclipse.ptp.etfw.parallel
-%pom_disable_module tools/etfw/org.eclipse.ptp.etfw.jaxb
-%pom_disable_module tools/etfw/org.eclipse.ptp.etfw.launch
 %pom_disable_module tools/etfw/org.eclipse.ptp.etfw.tau
 %pom_disable_module tools/etfw/org.eclipse.ptp.etfw.tau.papiselect
 %pom_disable_module tools/etfw/org.eclipse.ptp.etfw.tau.perfdmf
 %pom_disable_module tools/etfw/org.eclipse.ptp.etfw.tau.selinst
 %pom_disable_module tools/etfw/org.eclipse.ptp.etfw.tau.selinstfort
 %pom_disable_module tools/etfw/org.eclipse.ptp.etfw.tau.ui
-%pom_disable_module tools/etfw/org.eclipse.ptp.etfw.toolopts
-%pom_disable_module tools/gem/org.eclipse.ptp.gem
-%pom_disable_module tools/gem/org.eclipse.ptp.gem.help
-%pom_disable_module tools/pldt/org.eclipse.ptp.pldt.common
-%pom_disable_module tools/pldt/org.eclipse.ptp.pldt.doc.user
-%pom_disable_module tools/pldt/org.eclipse.ptp.pldt.mpi.analysis
-%pom_disable_module tools/pldt/org.eclipse.ptp.pldt.mpi.analysis.cdt
-%pom_disable_module tools/pldt/org.eclipse.ptp.pldt.mpi.core
 %pom_disable_module tools/pldt/org.eclipse.ptp.pldt.mpi.fortran
-%pom_disable_module tools/pldt/org.eclipse.ptp.pldt.openacc.core
 %pom_disable_module tools/pldt/org.eclipse.ptp.pldt.openacc.fortran
-%pom_disable_module tools/pldt/org.eclipse.ptp.pldt.openacc.ui
-%pom_disable_module tools/pldt/org.eclipse.ptp.pldt.openmp.analysis
-%pom_disable_module tools/pldt/org.eclipse.ptp.pldt.openmp.core
 %pom_disable_module tools/pldt/org.eclipse.ptp.pldt.openmp.fortran
-%pom_disable_module tools/pldt/org.eclipse.ptp.pldt.openmp.ui.pv
-%pom_disable_module tools/pldt/org.eclipse.ptp.pldt.openshmem
 %pom_disable_module tools/pldt/org.eclipse.ptp.pldt.upc
-%pom_disable_module tools/pldt/org.eclipse.ptp.pldt.wizards
-%pom_xpath_remove "feature[@id='org.eclipse.ptp.fortran']" releng/org.eclipse.ptp.repo/category.xml
-%pom_xpath_remove "feature[@id='org.eclipse.ptp.gem']" releng/org.eclipse.ptp.repo/category.xml
-%pom_xpath_remove "feature[@id='org.eclipse.ptp.pldt.upc']" releng/org.eclipse.ptp.repo/category.xml
-%pom_xpath_remove "feature[@id='org.eclipse.ptp.pldt.fortran']" releng/org.eclipse.ptp.repo/category.xml
-%pom_xpath_remove "feature[@id='org.eclipse.ptp.etfw.tau']" releng/org.eclipse.ptp.repo/category.xml
-%pom_xpath_remove "feature[@id='org.eclipse.ptp.etfw.tau.fortran']" releng/org.eclipse.ptp.repo/category.xml
-%pom_xpath_remove "feature[@id='org.eclipse.ptp.etfw.feedback.perfsuite']" releng/org.eclipse.ptp.repo/category.xml
-%pom_xpath_remove "feature[@id='org.eclipse.ptp.rdt.sync.fortran']" releng/org.eclipse.ptp.repo/category.xml
-%pom_xpath_remove "feature[@id='org.eclipse.photran']" releng/org.eclipse.ptp.repo/category.xml
-%pom_xpath_remove "feature[@id='org.eclipse.photran.intel']" releng/org.eclipse.ptp.repo/category.xml
-%pom_xpath_remove "feature[@id='org.eclipse.photran.xlf']" releng/org.eclipse.ptp.repo/category.xml
+%pom_xpath_remove "includes[@id='org.eclipse.ptp.rm.ibm.ll']" releng/org.eclipse.ptp-feature/feature.xml
+%pom_xpath_remove "includes[@id='org.eclipse.ptp.rm.ibm.pe']" releng/org.eclipse.ptp-feature/feature.xml
+%pom_xpath_remove "includes[@id='org.eclipse.ptp.rm.slurm']" releng/org.eclipse.ptp-feature/feature.xml
+%pom_xpath_remove "includes[@id='org.eclipse.ptp.rm.ibm.platform.lsf']" releng/org.eclipse.ptp-feature/feature.xml
 
 # Remove dep on ant-trax
 %pom_remove_dep ant:ant-trax rms/org.eclipse.ptp.rm.lml.da.server
 
-# Remove bundled binaries
-rm -r releng/org.eclipse.ptp.linux/os/linux
+# No need to build repo when using xmvn
+%pom_disable_module releng/org.eclipse.ptp.repo
+
+# Remove pre-built binaries
+for a in aix linux macosx ; do
+  rm -r releng/org.eclipse.ptp.$a/os/$a
+done
+
+%mvn_package "::{pom,target}::" __noinstall
+%mvn_package "::jar:sources{,-feature}:" sdk
+%mvn_package ":*.{sdk,core.source,doc.isv}" sdk
+%mvn_package ":*.pldt.*fortran" pldt-fortran
+%mvn_package ":*.pldt.upc" pldt-upc
+%mvn_package ":*.etfw.tau.{fortran,selinstfort}" etfw-tau-fortran
+%mvn_package ":*.etfw.tau*" etfw-tau
+%mvn_package ":*.gem{,.help}" gem
+%mvn_package ":*.rm.jaxb.contrib" rm-contrib
+%mvn_package ":*.sci" sci
+%mvn_package ":*.ptp.{proxy,utils,debug.sdm,aix,linux,macosx}" sdm
+%mvn_package ":*.rdt.sync.fortran{,.ui}" rdt-sync-fortran
+%mvn_package ":*.ptp.fortran" fortran
+%mvn_package ":"
 %{?scl:EOF}
 
 
 %build
 %{?scl:scl enable %{scl_maven} %{scl} - << "EOF"}
 set -e -x
-export JAVA_HOME=%{java_home}
-export PATH=/usr/bin:$PATH
+export JAVA_HOME=%{_jvmdir}/java
 export MAVEN_OPTS="-Xmx1024m -XX:CompileCommand=exclude,org/eclipse/tycho/core/osgitools/EquinoxResolver,newState ${MAVEN_OPTS}"
+
 # Build the sdm binary
 pushd debug/org.eclipse.ptp.debug.sdm
 export CFLAGS="%{optflags} -fno-strict-overflow"
 sh BUILD
 make clean
 popd
-mkdir -p releng/org.eclipse.ptp.linux/os/linux/%{_arch}
-cp -p debug/org.eclipse.ptp.debug.sdm/bin/sdm releng/org.eclipse.ptp.linux/os/linux/%{_arch}/sdm
+
+# Put binary in place and make sure bundle is dir-shaped when installed
+mkdir -p releng/org.eclipse.ptp.linux/os/linux/%{eclipse_arch}
+cp -p debug/org.eclipse.ptp.debug.sdm/bin/sdm releng/org.eclipse.ptp.linux/os/linux/%{eclipse_arch}/sdm
 echo -e "Eclipse-BundleShape: dir\n\n" >> releng/org.eclipse.ptp.linux/META-INF/MANIFEST.MF
 
 # Build the project
@@ -271,99 +253,53 @@ echo -e "Eclipse-BundleShape: dir\n\n" >> releng/org.eclipse.ptp.linux/META-INF/
 %install
 %{?scl:scl enable %{scl_maven} %{scl} - << "EOF"}
 set -e -x
-mkdir -p %{buildroot}%{eclipse_base}/dropins/ptp/eclipse/{features,plugins}
-
-# ptp
-for jar in releng/org.eclipse.ptp.repo/target/repository/features/*.jar
-do
-  name=$(basename $jar .jar)
-  # Skip external components
-  [ ${name/org.eclipse.photran/} != $name ] && continue
-  [ ${name/org.eclipse.rephraserengine/} != $name ] && continue
-  [ ${name/org.eclipse.remote/} != $name ] && continue
-  unzip -u -d %{buildroot}%{eclipse_base}/dropins/ptp/eclipse/features/$name $jar
-  files="files.${name%.*}"
-  if [[ $name == org.eclipse.ptp_%{version}.* ]]
-  then
-    # Group the core features
-    sed -ne '/id=/s#.*"\(.*\)"#%{eclipse_base}/dropins/ptp/eclipse/features/\1_*#gp' %{buildroot}%{eclipse_base}/dropins/ptp/eclipse/features/$name/feature.xml | tail -n +2 > $files
-    # Add the plugins for those features
-    sed -ne '/id=/s#.*"\(.*\)"#\1#gp' %{buildroot}%{eclipse_base}/dropins/ptp/eclipse/features/$name/feature.xml | tail -n +2 | while read f
-    do
-      [ $f == org.eclipse.ptp ] && continue
-      sed -ne '/id=/s#.*"\(.*\)"#%{eclipse_base}/dropins/ptp/eclipse/plugins/\1_*.jar#gp' %{buildroot}%{eclipse_base}/dropins/ptp/eclipse/features/${f}_*/feature.xml | tail -n +2 >> $files
-    done
-    sort -u -o $files $files
-  else
-    sed -ne '/id=/s#.*"\(.*\)"#%{eclipse_base}/dropins/ptp/eclipse/plugins/\1_*.jar#gp' %{buildroot}%{eclipse_base}/dropins/ptp/eclipse/features/$name/feature.xml | tail -n +2 > $files
-  fi
-done
-cp -u releng/org.eclipse.ptp.repo/target/repository/plugins/*.jar \
-   %{buildroot}%{eclipse_base}/dropins/ptp/eclipse/plugins/
-
-# Remove disabled modules from filelist
-sed -i -e '\,plugins/org.eclipse.ptp.remote.remotetools_,d' \
-       -e '\,plugins/org.eclipse.ptp.remote_,d' \
-       -e '\,plugins/org.eclipse.ptp.remotetools_,d' files.*
+%mvn_install
 
 # Install sdm binary so debuginfo is created
-pushd %{buildroot}%{eclipse_base}/dropins/ptp/eclipse/plugins/
-sdm=$(ls org.eclipse.ptp.linux_*)
-unzip -d ${sdm%.jar} $sdm
-rm $sdm
-popd
-sed -i -e '/plugins\/org\.eclipse\.ptp\.linux_/s/\.jar//' files.*
 mkdir -p %{buildroot}%{_libdir}/ptp
-ln -s %{eclipse_base}/dropins/ptp/eclipse/plugins/${sdm%.jar}/os/linux/%{eclipse_arch}/sdm \
+plugin=$(ls %{buildroot}%{_libdir}/eclipse/droplets/ptp-sdm/eclipse/plugins | grep org.eclipse.ptp.linux_)
+chmod +x %{buildroot}%{_libdir}/eclipse/droplets/ptp-sdm/eclipse/plugins/$plugin/os/linux/%{eclipse_arch}/sdm
+ln -s %{_libdir}/eclipse/droplets/ptp-sdm/eclipse/plugins/$plugin/os/linux/%{eclipse_arch}/sdm \
   %{buildroot}%{_libdir}/ptp/
 %{?scl:EOF}
 
 
-%files -f files.org.eclipse.ptp_%{version}
+%files -f .mfiles
 %doc releng/org.eclipse.ptp-feature/epl-v10.html
-%dir %{eclipse_base}/dropins/ptp
-%dir %{eclipse_base}/dropins/ptp/eclipse
-%dir %{eclipse_base}/dropins/ptp/eclipse/features
-%dir %{eclipse_base}/dropins/ptp/eclipse/plugins
 
 %files master
 %doc releng/org.eclipse.ptp-feature/epl-v10.html
 
-%files core-source -f files.org.eclipse.ptp.core.source_%{version}
+%files gem -f .mfiles-gem
 %doc releng/org.eclipse.ptp-feature/epl-v10.html
-%{eclipse_base}/dropins/ptp/eclipse/features/org.eclipse.ptp.core.source_*
 
-%files rm-contrib -f files.org.eclipse.ptp.rm.jaxb.contrib_%{version}
+%files rm-contrib -f .mfiles-rm-contrib
 %doc releng/org.eclipse.ptp-feature/epl-v10.html
-%{eclipse_base}/dropins/ptp/eclipse/features/org.eclipse.ptp.rm.jaxb.contrib_*
 
-%files sci -f files.org.eclipse.ptp.sci_%{version}
+%files sci -f .mfiles-sci
 %doc releng/org.eclipse.ptp-feature/epl-v10.html
-%{eclipse_base}/dropins/ptp/eclipse/features/org.eclipse.ptp.sci_*
 
-%files sdk -f files.org.eclipse.ptp.sdk_%{version}
+%files sdk -f .mfiles-sdk
 %doc releng/org.eclipse.ptp-feature/epl-v10.html
-%{eclipse_base}/dropins/ptp/eclipse/features/org.eclipse.ptp.sdk_*
 
-%files sdm -f files.org.eclipse.ptp.debug.sdm_%{version}
+%files sdm -f .mfiles-sdm
 %doc releng/org.eclipse.ptp-feature/epl-v10.html
-%{eclipse_base}/dropins/ptp/eclipse/features/org.eclipse.ptp.debug.sdm_*
 %{_libdir}/ptp/
 
 %changelog
-* Mon Aug 01 2016 Mat Booth <mat.booth@redhat.com> - 9.1.0-1.4
-- Remove exploded jar
+* Thu Aug 11 2016 Mat Booth <mat.booth@redhat.com> - 9.1.0-3.2
+- Disable bits for fortran support
 
-* Mon Aug 01 2016 Mat Booth <mat.booth@redhat.com> - 9.1.0-1.3
-- Don't package intermediate artifacts, fix binary stripping problems
-- Disable compiler optimisation that make assumptions about signed integer
-  overflows
-
-* Fri Jul 29 2016 Mat Booth <mat.booth@redhat.com> - 9.1.0-1.2
-- Disable all Fortran support bits
-
-* Fri Jul 29 2016 Mat Booth <mat.booth@redhat.com> - 9.1.0-1.1
+* Thu Aug 11 2016 Mat Booth <mat.booth@redhat.com> - 9.1.0-3.1
 - Auto SCL-ise package for rh-eclipse46 collection
+
+* Thu Aug 11 2016 Mat Booth <mat.booth@redhat.com> - 9.1.0-3
+- Don't ship intermediate artifacts
+- Fix requires of sci package
+
+* Wed Aug 10 2016 Mat Booth <mat.booth@redhat.com> - 9.1.0-2
+- Install as droplets, auto-generate requires
+- Merge source package into SDK
 
 * Wed Jun 22 2016 Mat Booth <mat.booth@redhat.com> - 9.1.0-1
 - Update to Neon release
