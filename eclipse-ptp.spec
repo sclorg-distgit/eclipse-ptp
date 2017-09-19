@@ -2,10 +2,9 @@
 %{!?scl:%global pkg_name %{name}}
 %{?java_common_find_provides_and_requires}
 
-%global baserelease 2
+%global baserelease 1
 
-%global ptp_qualifier           201606021530
-%global ptp_git_tag             PTP_9_1_0
+%global ptp_git_tag e26e4c022eb233d9e074c7db1f5725ce0a7c3c1a
 
 %ifarch %{ix86}
     %global eclipse_arch x86
@@ -22,8 +21,8 @@
 
 Summary:        Eclipse Parallel Tools Platform
 Name:           %{?scl_prefix}eclipse-ptp
-Version:        9.1.0
-Release:        3.%{baserelease}%{?dist}
+Version:        9.1.2
+Release:        1.%{baserelease}%{?dist}
 License:        EPL
 URL:            http://www.eclipse.org/ptp
 
@@ -38,8 +37,14 @@ BuildRequires:  %{?scl_prefix}eclipse-cdt-parsers
 BuildRequires:  %{?scl_prefix}eclipse-license
 BuildRequires:  %{?scl_prefix}eclipse-jgit
 BuildRequires:  %{?scl_prefix}eclipse-pde
+# No photran on RHEL
+%if ! 0%{?rhel}
+BuildRequires:  eclipse-photran-intel
+BuildRequires:  eclipse-photran-xlf
+%endif
 BuildRequires:  %{?scl_prefix}eclipse-remote
 BuildRequires:  %{?scl_prefix}eclipse-tm-terminal
+BuildRequires:  %{?scl_prefix}eclipse-tm-terminal-connectors
 BuildRequires:  %{?scl_prefix}lpg-java-compat = 1.1.0
 
 # Pulled in by rdt.remotetools being in ptp main
@@ -86,13 +91,83 @@ This package contains the main PTP run-time features.
 Summary:        Complete PTP package
 #master package is a virtual package that requires all of the components
 Requires:       %{name} = %{version}-%{release}
-Requires:       %{name}-gem = %{version}-%{release}
+# No photran on RHEL
+%if ! 0%{?rhel}
+Requires:       %{name}-etfw-tau = %{version}-%{release}
+Requires:       %{name}-etfw-tau-fortran = %{version}-%{release}
+Requires:       %{name}-fortran = %{version}-%{release}
+Requires:       %{name}-pldt-fortran = %{version}-%{release}
+Requires:       %{name}-pldt-upc = %{version}-%{release}
+Requires:       %{name}-rdt-sync-fortran = %{version}-%{release}
+%endif
 Requires:       %{name}-rm-contrib = %{version}-%{release}
+Requires:       %{name}-gem = %{version}-%{release}
 Requires:       %{name}-sci = %{version}-%{release}
 Requires:       %{name}-sdm = %{version}-%{release}
 
 %description    master
 The package will bring in all of the PTP components.
+
+
+# No photran on RHEL
+%if ! 0%{?rhel}
+
+%package        etfw-tau
+Summary:        PTP External Tools Framework TAU Support
+BuildArch:      noarch
+
+%description    etfw-tau
+Extends the external tools framework with capabilities specific
+to the TAU performance analysis system.
+
+%package        etfw-tau-fortran
+Summary:        PTP External Tools Framework: TAU Fortran Enabler
+BuildArch:      noarch
+
+%description    etfw-tau-fortran
+Adds selective instrumentation functionality for Fortran via the
+Photran project.
+
+%package        fortran
+Summary:        PTP Fortran Support
+BuildArch:      noarch
+Requires:       %{name}-etfw-tau-fortran = %{version}-%{release}
+Requires:       %{name}-pldt-fortran = %{version}-%{release}
+Requires:       %{name}-rdt-sync-fortran = %{version}-%{release}
+
+%description    fortran
+Adds Fortran support to PTP.
+
+%package        pldt-fortran
+Summary:        PTP Parallel Language Development Tools Fortran Support
+BuildArch:      noarch
+
+%description    pldt-fortran
+Adds a range of static analysis and programming assistance tools for Fortran.
+
+%package        pldt-upc
+Summary:        PTP Parallel Language Development Tools UPC Support
+BuildArch:      noarch
+
+%description    pldt-upc
+Adds a range of static analysis and programming assistance tools for UPC.  
+Note: this is separated from the rest of PLDT since it requires the UPC
+feature of CDT, which is sometimes not installed with CDT.
+
+%package        rdt-sync-fortran
+Summary:        PTP Fortran Synchronization Support
+BuildArch:      noarch
+
+%description    rdt-sync-fortran
+Adds the ability to remotely synchronize Fortran projects.
+%endif
+
+%package        rm-contrib
+Summary:        PTP Contributed Resource Manager Definitions
+BuildArch:      noarch
+
+%description    rm-contrib
+Adds resource managers for a number of different systems.
 
 %package        gem
 Summary:        PTP Graphical Explorer of MPI Programs (GEM)
@@ -112,13 +187,6 @@ differing communication buffer allocations). For a given test harness, GEM
 will allow you to explore only the relevant process interleavings, which are
 much smaller than the number of total feasible interleavings. GEM also
 guarantees to discover and explore all non-deterministic matches at run-time. 
-
-%package        rm-contrib
-Summary:        PTP Contributed Resource Manager Definitions
-BuildArch:      noarch
-
-%description    rm-contrib
-Adds resource managers for a number of different systems.
 
 %package        sci
 Summary:        PTP Scalable Communication Infrastructure (SCI)
@@ -156,7 +224,7 @@ in the sdm plugin and at %{_libdir}/ptp/sdm.  If the target system is of
 a different archicture, you will need to build and install it by hand.
 
 %prep
-%{?scl:scl enable %{scl_maven} %{scl} - << "EOF"}
+%{?scl:scl enable %{scl_maven} %{scl} - << "EOFSCL"}
 set -e -x
 %setup -q -n org.eclipse.ptp-%{ptp_git_tag}
 
@@ -165,6 +233,8 @@ TYCHO_ENV="<environment><os>linux</os><ws>gtk</ws><arch>%{eclipse_arch}</arch></
 %pom_xpath_set "pom:configuration/pom:environments" "$TYCHO_ENV"
 %pom_xpath_remove "pom:configuration/pom:target"
 
+# No photran on RHEL
+%if 0%{?rhel}
 # Disable Fortran support bits
 %pom_disable_module rdt/org.eclipse.ptp.rdt.sync.fortran.ui
 %pom_disable_module releng/org.eclipse.ptp.etfw.tau-feature
@@ -198,6 +268,7 @@ TYCHO_ENV="<environment><os>linux</os><ws>gtk</ws><arch>%{eclipse_arch}</arch></
 %pom_xpath_remove "includes[@id='org.eclipse.ptp.rm.ibm.pe']" releng/org.eclipse.ptp-feature/feature.xml
 %pom_xpath_remove "includes[@id='org.eclipse.ptp.rm.slurm']" releng/org.eclipse.ptp-feature/feature.xml
 %pom_xpath_remove "includes[@id='org.eclipse.ptp.rm.ibm.platform.lsf']" releng/org.eclipse.ptp-feature/feature.xml
+%endif
 
 # Remove dep on ant-trax
 %pom_remove_dep ant:ant-trax rms/org.eclipse.ptp.rm.lml.da.server
@@ -224,11 +295,11 @@ done
 %mvn_package ":*.rdt.sync.fortran{,.ui}" rdt-sync-fortran
 %mvn_package ":*.ptp.fortran" fortran
 %mvn_package ":"
-%{?scl:EOF}
+%{?scl:EOFSCL}
 
 
 %build
-%{?scl:scl enable %{scl_maven} %{scl} - << "EOF"}
+%{?scl:scl enable %{scl_maven} %{scl} - << "EOFSCL"}
 set -e -x
 export JAVA_HOME=%{_jvmdir}/java
 export MAVEN_OPTS="-Xmx1024m -XX:CompileCommand=exclude,org/eclipse/tycho/core/osgitools/EquinoxResolver,newState ${MAVEN_OPTS}"
@@ -245,13 +316,15 @@ mkdir -p releng/org.eclipse.ptp.linux/os/linux/%{eclipse_arch}
 cp -p debug/org.eclipse.ptp.debug.sdm/bin/sdm releng/org.eclipse.ptp.linux/os/linux/%{eclipse_arch}/sdm
 echo -e "Eclipse-BundleShape: dir\n\n" >> releng/org.eclipse.ptp.linux/META-INF/MANIFEST.MF
 
+# Qualifier generated from last modification time of source tarball
+QUALIFIER=$(date -u -d"$(stat --format=%y %{SOURCE0})" +%Y%m%d%H%M)
 # Build the project
-%mvn_build -j -- -DforceContextQualifier=%{ptp_qualifier}
-%{?scl:EOF}
+%mvn_build -j -- -DforceContextQualifier=$QUALIFIER
+%{?scl:EOFSCL}
 
 
 %install
-%{?scl:scl enable %{scl_maven} %{scl} - << "EOF"}
+%{?scl:scl enable %{scl_maven} %{scl} - << "EOFSCL"}
 set -e -x
 %mvn_install
 
@@ -261,7 +334,7 @@ plugin=$(ls %{buildroot}%{_libdir}/eclipse/droplets/ptp-sdm/eclipse/plugins | gr
 chmod +x %{buildroot}%{_libdir}/eclipse/droplets/ptp-sdm/eclipse/plugins/$plugin/os/linux/%{eclipse_arch}/sdm
 ln -s %{_libdir}/eclipse/droplets/ptp-sdm/eclipse/plugins/$plugin/os/linux/%{eclipse_arch}/sdm \
   %{buildroot}%{_libdir}/ptp/
-%{?scl:EOF}
+%{?scl:EOFSCL}
 
 
 %files -f .mfiles
@@ -270,10 +343,32 @@ ln -s %{_libdir}/eclipse/droplets/ptp-sdm/eclipse/plugins/$plugin/os/linux/%{ecl
 %files master
 %doc releng/org.eclipse.ptp-feature/epl-v10.html
 
-%files gem -f .mfiles-gem
+# No photran on RHEL
+%if ! 0%{?rhel}
+
+%files etfw-tau -f .mfiles-etfw-tau
 %doc releng/org.eclipse.ptp-feature/epl-v10.html
 
+%files etfw-tau-fortran -f .mfiles-etfw-tau-fortran
+%doc releng/org.eclipse.ptp-feature/epl-v10.html
+
+%files fortran -f .mfiles-fortran
+%doc releng/org.eclipse.ptp-feature/epl-v10.html
+
+%files pldt-fortran -f .mfiles-pldt-fortran
+%doc releng/org.eclipse.ptp-feature/epl-v10.html
+
+%files pldt-upc -f .mfiles-pldt-upc
+%doc releng/org.eclipse.ptp-feature/epl-v10.html
+
+%files rdt-sync-fortran -f .mfiles-rdt-sync-fortran
+%doc releng/org.eclipse.ptp-feature/epl-v10.html
+%endif
+
 %files rm-contrib -f .mfiles-rm-contrib
+%doc releng/org.eclipse.ptp-feature/epl-v10.html
+
+%files gem -f .mfiles-gem
 %doc releng/org.eclipse.ptp-feature/epl-v10.html
 
 %files sci -f .mfiles-sci
@@ -287,11 +382,25 @@ ln -s %{_libdir}/eclipse/droplets/ptp-sdm/eclipse/plugins/$plugin/os/linux/%{ecl
 %{_libdir}/ptp/
 
 %changelog
-* Thu Aug 11 2016 Mat Booth <mat.booth@redhat.com> - 9.1.0-3.2
-- Disable bits for fortran support
-
-* Thu Aug 11 2016 Mat Booth <mat.booth@redhat.com> - 9.1.0-3.1
+* Sun Apr 02 2017 Mat Booth <mat.booth@redhat.com> - 9.1.2-1.1
 - Auto SCL-ise package for rh-eclipse46 collection
+
+* Wed Mar 29 2017 Mat Booth <mat.booth@redhat.com> - 9.1.2-1
+- Update to latest upstream release
+
+* Fri Feb 10 2017 Fedora Release Engineering <releng@fedoraproject.org> - 9.1.1-3
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_26_Mass_Rebuild
+
+* Wed Nov 09 2016 Mat Booth <mat.booth@redhat.com> - 9.1.1-2
+- Rebuilt for ppc64 and ppc64le
+
+* Wed Oct 05 2016 Mat Booth <mat.booth@redhat.com> - 9.1.1-1
+- Update to latest release
+- Disable photran bits when building on RHEL
+- Don't hard-code qualifier
+
+* Tue Aug 23 2016 Alexander Kurtakov <akurtako@redhat.com> 9.1.0-4
+- Add BR on eclipse-tm-terminal-connectors to unbreak build.
 
 * Thu Aug 11 2016 Mat Booth <mat.booth@redhat.com> - 9.1.0-3
 - Don't ship intermediate artifacts
